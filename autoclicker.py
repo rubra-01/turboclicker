@@ -35,7 +35,7 @@ class SilentAutoClicker:
             ]
         )
         self.context = await self.browser.new_context(
-            viewport={'width': 1280, 'height': 4000},
+            viewport={'width': 1280, 'height': 720},
             java_script_enabled=True,
             ignore_https_errors=True,
             user_agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -73,7 +73,7 @@ class SilentAutoClicker:
         self.context.on('page', self.handle_new_page)
 
     async def handle_new_page(self, page):
-        asyncio.create_task(page.close())
+        await page.close()
 
     async def navigate_to_site(self):
         await self.page.goto('https://greatonlinetools.com/autoliker/', timeout=60000)
@@ -83,12 +83,13 @@ class SilentAutoClicker:
         for _ in range(max_scrolls):
             try:
                 element = self.page.locator(selector).first
-                if await element.is_visible(timeout=10):
+                if await element.is_visible(timeout=500):
                     await element.scroll_into_view_if_needed()
                     return element
             except:
                 pass
             await self.page.evaluate('window.scrollBy(0, 300)')
+            await asyncio.sleep(0.1)
         return None
 
     async def enter_username(self):
@@ -146,10 +147,6 @@ class SilentAutoClicker:
                 if element:
                     await element.click(timeout=5000)
                     await asyncio.sleep(2)
-                    # Scroll twice after entering earn page
-                    await self.page.evaluate('window.scrollBy(0, 500)')
-                    await asyncio.sleep(0.5)
-                    await self.page.evaluate('window.scrollBy(0, 500)')
                     return
             except:
                 continue
@@ -165,7 +162,7 @@ class SilentAutoClicker:
         for selector in selectors:
             try:
                 element = self.page.locator(selector).first
-                if await element.is_visible(timeout=1):
+                if await element.is_visible(timeout=200):
                     return True
             except:
                 continue
@@ -174,10 +171,11 @@ class SilentAutoClicker:
     async def auto_click_loop(self):
         while self.running:
             try:
-                # Close any extra pages immediately (parallel)
+                # Close any extra pages immediately (before clicking)
                 pages = self.context.pages
-                if len(pages) > 1:
-                    await asyncio.gather(*[p.close() for p in pages[1:]])
+                while len(pages) > 1:
+                    await pages[-1].close()
+                    pages = self.context.pages
                 
                 # Check if we've been redirected to search page
                 if await self.check_if_on_search_page():
@@ -187,18 +185,44 @@ class SilentAutoClicker:
                     await self.click_earn_credits()
                     continue
                 
-                # Use JavaScript to find and click any element with target text
-                await self.page.evaluate('''() => {
-                    const targetTexts = ['Like', 'like', 'Follow', 'follow', 'Verify', 'verify'];
-                    const allElements = document.querySelectorAll('*');
-                    for (let el of allElements) {
-                        if (el.textContent && targetTexts.some(t => el.textContent.includes(t))) {
-                            try {
-                                el.click();
-                            } catch(e) {}
-                        }
-                    }
-                }''')
+                # Look for buttons with like, follow, or verify text
+                selectors = [
+                    'button:has-text("Like")',
+                    'button:has-text("like")',
+                    'button:has-text("Follow")',
+                    'button:has-text("follow")',
+                    'button:has-text("Verify")',
+                    'button:has-text("verify")',
+                    'a:has-text("Like")',
+                    'a:has-text("like")',
+                    'a:has-text("Follow")',
+                    'a:has-text("follow")',
+                    'a:has-text("Verify")',
+                    'a:has-text("verify")',
+                    'button:has-text("verify to")',
+                    'button:has-text("Verify to")',
+                    '*[class*="like"]',
+                    '*[class*="follow"]',
+                    '*[class*="verify"]',
+                    '*[id*="like"]',
+                    '*[id*="follow"]',
+                    '*[id*="verify"]'
+                ]
+                
+                clicked = False
+                for selector in selectors:
+                    try:
+                        element = self.page.locator(selector).first
+                        if await element.is_visible(timeout=50):
+                            await element.click(timeout=1000)
+                            clicked = True
+                            break
+                    except:
+                        continue
+                
+                # If no button found, try scrolling to find one
+                if not clicked:
+                    await self.page.evaluate('window.scrollBy(0, 200)')
                 
             except Exception:
                 pass
