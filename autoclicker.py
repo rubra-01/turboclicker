@@ -9,6 +9,8 @@ class SilentAutoClicker:
         self.context = None
         self.page = None
         self.running = True
+        self.scroll_position = 0
+        self.max_scroll = 10000
 
     async def init(self, headless=False):
         playwright = await async_playwright().start()
@@ -181,6 +183,8 @@ class SilentAutoClicker:
                     await self.click_search()
                     await self.wait_for_dashboard()
                     await self.click_earn_credits()
+                    self.scroll_position = 0
+                    await self.page.evaluate('window.scrollTo(0, 0)')
                     continue
                 
                 # Look for buttons with like, follow, or verify text
@@ -218,9 +222,17 @@ class SilentAutoClicker:
                     except:
                         continue
                 
-                # If no button found, try scrolling to find one
-                if not clicked:
+                # If button clicked, reset scroll position
+                if clicked:
+                    self.scroll_position = 0
+                # If no button found, scroll down (but don't exceed max)
+                elif self.scroll_position < self.max_scroll:
                     await self.page.evaluate('window.scrollBy(0, 200)')
+                    self.scroll_position += 200
+                # If reached max scroll, reset to top
+                else:
+                    self.scroll_position = 0
+                    await self.page.evaluate('window.scrollTo(0, 0)')
                 
             except Exception:
                 pass
