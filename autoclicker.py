@@ -183,18 +183,41 @@ class SilentAutoClicker:
                     await self.click_earn_credits()
                     continue
                 
-                # Use JavaScript to find and click buttons anywhere on page (no scrolling needed)
-                clicked = await self.page.evaluate('''() => {
-                    const texts = ['Like', 'like', 'Follow', 'follow', 'Verify', 'verify'];
-                    const elements = document.querySelectorAll('button, a, div, span');
-                    for (let el of elements) {
-                        if (el.textContent && texts.some(t => el.textContent.includes(t))) {
-                            el.click();
-                            return true;
-                        }
-                    }
-                    return false;
-                }''')
+                # Find and click all matching buttons without scrolling
+                selectors = [
+                    'button:has-text("Like")',
+                    'button:has-text("like")',
+                    'button:has-text("Follow")',
+                    'button:has-text("follow")',
+                    'button:has-text("Verify")',
+                    'button:has-text("verify")',
+                    'a:has-text("Like")',
+                    'a:has-text("like")',
+                    'a:has-text("Follow")',
+                    'a:has-text("follow")',
+                    'a:has-text("Verify")',
+                    'a:has-text("verify")',
+                    'button:has-text("verify to")',
+                    'button:has-text("Verify to")',
+                    '*:has-text("Like")',
+                    '*:has-text("like")',
+                    '*:has-text("Follow")',
+                    '*:has-text("follow")',
+                    '*:has-text("Verify")',
+                    '*:has-text("verify")'
+                ]
+                
+                for selector in selectors:
+                    try:
+                        elements = self.page.locator(selector)
+                        count = await elements.count()
+                        for i in range(count):
+                            try:
+                                await elements.nth(i).click(timeout=10)
+                            except:
+                                pass
+                    except:
+                        continue
                 
             except Exception:
                 pass
