@@ -9,8 +9,6 @@ class SilentAutoClicker:
         self.context = None
         self.page = None
         self.running = True
-        self.scroll_position = 0
-        self.max_scroll = 10000
 
     async def init(self, headless=False):
         playwright = await async_playwright().start()
@@ -183,56 +181,20 @@ class SilentAutoClicker:
                     await self.click_search()
                     await self.wait_for_dashboard()
                     await self.click_earn_credits()
-                    self.scroll_position = 0
-                    await self.page.evaluate('window.scrollTo(0, 0)')
                     continue
                 
-                # Look for buttons with like, follow, or verify text
-                selectors = [
-                    'button:has-text("Like")',
-                    'button:has-text("like")',
-                    'button:has-text("Follow")',
-                    'button:has-text("follow")',
-                    'button:has-text("Verify")',
-                    'button:has-text("verify")',
-                    'a:has-text("Like")',
-                    'a:has-text("like")',
-                    'a:has-text("Follow")',
-                    'a:has-text("follow")',
-                    'a:has-text("Verify")',
-                    'a:has-text("verify")',
-                    'button:has-text("verify to")',
-                    'button:has-text("Verify to")',
-                    '*[class*="like"]',
-                    '*[class*="follow"]',
-                    '*[class*="verify"]',
-                    '*[id*="like"]',
-                    '*[id*="follow"]',
-                    '*[id*="verify"]'
-                ]
-                
-                clicked = False
-                for selector in selectors:
-                    try:
-                        element = self.page.locator(selector).first
-                        if await element.is_visible(timeout=1):
-                            await element.click(timeout=10)
-                            clicked = True
-                            break
-                    except:
-                        continue
-                
-                # If button clicked, reset scroll position
-                if clicked:
-                    self.scroll_position = 0
-                # If no button found, scroll down (but don't exceed max)
-                elif self.scroll_position < self.max_scroll:
-                    await self.page.evaluate('window.scrollBy(0, 200)')
-                    self.scroll_position += 200
-                # If reached max scroll, reset to top
-                else:
-                    self.scroll_position = 0
-                    await self.page.evaluate('window.scrollTo(0, 0)')
+                # Use JavaScript to find and click buttons anywhere on page (no scrolling needed)
+                clicked = await self.page.evaluate('''() => {
+                    const texts = ['Like', 'like', 'Follow', 'follow', 'Verify', 'verify'];
+                    const elements = document.querySelectorAll('button, a, div, span');
+                    for (let el of elements) {
+                        if (el.textContent && texts.some(t => el.textContent.includes(t))) {
+                            el.click();
+                            return true;
+                        }
+                    }
+                    return false;
+                }''')
                 
             except Exception:
                 pass
