@@ -9,7 +9,6 @@ class SilentAutoClicker:
         self.context = None
         self.page = None
         self.running = True
-        self.button_position = None
 
     async def init(self, headless=False):
         playwright = await async_playwright().start()
@@ -186,40 +185,31 @@ class SilentAutoClicker:
                     await self.click_search()
                     await self.wait_for_dashboard()
                     await self.click_earn_credits()
-                    self.button_position = None
                     continue
                 
-                # If we have a recorded position, click there continuously
-                if self.button_position:
-                    await self.page.mouse.click(self.button_position['x'], self.button_position['y'])
-                else:
-                    # Find button and record its position
-                    selectors = [
-                        'button:has-text("Like")',
-                        'button:has-text("like")',
-                        'button:has-text("Follow")',
-                        'button:has-text("follow")',
-                        'button:has-text("Verify")',
-                        'button:has-text("verify")',
-                        'a:has-text("Like")',
-                        'a:has-text("like")',
-                        'a:has-text("Follow")',
-                        'a:has-text("follow")',
-                        'a:has-text("Verify")',
-                        'a:has-text("verify")'
-                    ]
-                    
-                    for selector in selectors:
-                        try:
-                            element = self.page.locator(selector).first
-                            if await element.is_visible(timeout=10):
-                                box = await element.bounding_box()
-                                if box:
-                                    self.button_position = {'x': box['x'] + box['width'] / 2, 'y': box['y'] + box['height'] / 2}
-                                    await element.click(timeout=10)
-                                    break
-                        except:
-                            continue
+                # Always search for and click visible buttons
+                selectors = [
+                    'button:has-text("Like")',
+                    'button:has-text("like")',
+                    'button:has-text("Follow")',
+                    'button:has-text("follow")',
+                    'button:has-text("Verify")',
+                    'button:has-text("verify")',
+                    'a:has-text("Like")',
+                    'a:has-text("like")',
+                    'a:has-text("Follow")',
+                    'a:has-text("follow")',
+                    'a:has-text("Verify")',
+                    'a:has-text("verify")'
+                ]
+                
+                for selector in selectors:
+                    try:
+                        element = self.page.locator(selector).first
+                        if await element.is_visible(timeout=5):
+                            await element.click(timeout=5)
+                    except:
+                        continue
                 
             except Exception:
                 pass
