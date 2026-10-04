@@ -1,11 +1,11 @@
 name: Run 100x Automation Engines
 
 on:
-  workflow_dispatch: # Allows you to manually trigger it with a single click
+  workflow_dispatch:
 
 jobs:
-  sequential-runner:
-    runs-on: ubuntu-latest # Runs everything safely inside a single machine
+  parallel-runner:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout automation code repository
@@ -29,18 +29,16 @@ jobs:
         run: |
           playwright install chromium
 
-      - name: Execute 100 Clicker Instances
+      - name: Execute 65 Clicker Instances Simultaneously
         run: |
-          echo "🚀 Initiating bulk execution chain..."
-          for i in {1..100}
+          echo "🚀 Unleashing 65 instances completely at once..."
+          
+          for i in {1..65}
           do
-            echo "▶️ Starting instance number $i of 100..."
+            # Spawns all 65 immediately into the background without waiting
             python autoclicker.py &
-            
-            # Give each script a quick 2-second breathing room buffer before spawning the next one
-            sleep 2
           done
           
-          echo "⏳ All instances successfully initialized. Holding main pipeline active..."
-          # Keeps the master container open so the parallel background loops can run completely
+          echo "⏳ All 65 background engines launched. Holding main pipeline live..."
           wait
+          echo "🎉 Complete!"
