@@ -1,0 +1,39 @@
+name: Run 100x Automation Engines
+
+on:
+  workflow_dispatch: # Adds a manual click button in your GitHub dashboard
+
+jobs:
+  automation-runner:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Splits the work into 4 parallel chunks of 25 jobs to reach 100 executions gracefully
+        chunk: [1, 2, 3, 4]
+        instance: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+
+    steps:
+      - name: Checkout automation code repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python Runtime Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install System dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install Headless Chromium Browser Binary
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Execute Clicker Engine Instance
+        run: |
+          echo "🚀 Spawning automated runner instance index: ${{ matrix.chunk }}-${{ matrix.instance }}"
+          # Replace clicker.py with the exact filename of your automation script
+          python clicker.py

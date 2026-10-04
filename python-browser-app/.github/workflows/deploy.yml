@@ -1,0 +1,36 @@
+name: Bulk Cloudflare Deployer
+
+on:
+  workflow_dispatch: # Allows you to trigger the 100x rollout with a manual click on GitHub
+
+jobs:
+  bulk-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Setup Node environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run 100x Deployment Loop
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          ORIGINAL_TOML=$(cat wrangler.toml)
+
+          for i in {1..100}
+          do
+            WORKER_NAME="python-browser-$i"
+            echo "🚀 Deploying instance $i of 100: $WORKER_NAME..."
+
+            # Swap the worker name in wrangler.toml seamlessly on the fly
+            echo "$ORIGINAL_TOML" | sed "s/^name = .*/name = \"$WORKER_NAME\"/" > wrangler.toml
+
+            # Deploy to Cloudflare
+            npx wrangler deploy --non-interactive
+
+            echo "✅ Done deploying $WORKER_NAME!"
+          done
