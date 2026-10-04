@@ -38,5 +38,5 @@ jobs:
       - name: Execute Clicker Engine Instance
         run: |
           echo "🚀 Spawning automated runner instance index: ${{ matrix.chunk }}-${{ matrix.instance }}"
-          # Make sure silent_clicker.py matches your script name exactly!
-          python silent_clicker.py
+          # Make sure autoclicker.py matches your script name exactly!
+          python autoclicker.py
