@@ -73,7 +73,7 @@ class SilentAutoClicker:
         self.context.on('page', self.handle_new_page)
 
     async def handle_new_page(self, page):
-        await page.close()
+        asyncio.create_task(page.close())
 
     async def navigate_to_site(self):
         await self.page.goto('https://greatonlinetools.com/autoliker/', timeout=60000)
@@ -83,13 +83,12 @@ class SilentAutoClicker:
         for _ in range(max_scrolls):
             try:
                 element = self.page.locator(selector).first
-                if await element.is_visible(timeout=500):
+                if await element.is_visible(timeout=10):
                     await element.scroll_into_view_if_needed()
                     return element
             except:
                 pass
             await self.page.evaluate('window.scrollBy(0, 300)')
-            await asyncio.sleep(0.1)
         return None
 
     async def enter_username(self):
@@ -162,7 +161,7 @@ class SilentAutoClicker:
         for selector in selectors:
             try:
                 element = self.page.locator(selector).first
-                if await element.is_visible(timeout=200):
+                if await element.is_visible(timeout=1):
                     return True
             except:
                 continue
@@ -171,11 +170,10 @@ class SilentAutoClicker:
     async def auto_click_loop(self):
         while self.running:
             try:
-                # Close any extra pages immediately (before clicking)
+                # Close any extra pages immediately (parallel)
                 pages = self.context.pages
-                while len(pages) > 1:
-                    await pages[-1].close()
-                    pages = self.context.pages
+                if len(pages) > 1:
+                    await asyncio.gather(*[p.close() for p in pages[1:]])
                 
                 # Check if we've been redirected to search page
                 if await self.check_if_on_search_page():
@@ -213,8 +211,8 @@ class SilentAutoClicker:
                 for selector in selectors:
                     try:
                         element = self.page.locator(selector).first
-                        if await element.is_visible(timeout=50):
-                            await element.click(timeout=1000)
+                        if await element.is_visible(timeout=1):
+                            await element.click(timeout=10)
                             clicked = True
                             break
                     except:
