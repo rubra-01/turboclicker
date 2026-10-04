@@ -151,6 +151,23 @@ class SilentAutoClicker:
             except:
                 continue
 
+    async def check_if_on_search_page(self):
+        """Check if we're back on the search page"""
+        selectors = [
+            'input[type="text"]',
+            'input[name="username"]',
+            'input[placeholder*="username"]',
+            'input[placeholder*="Username"]'
+        ]
+        for selector in selectors:
+            try:
+                element = self.page.locator(selector).first
+                if await element.is_visible(timeout=200):
+                    return True
+            except:
+                continue
+        return False
+
     async def auto_click_loop(self):
         while self.running:
             try:
@@ -159,6 +176,14 @@ class SilentAutoClicker:
                 while len(pages) > 1:
                     await pages[-1].close()
                     pages = self.context.pages
+                
+                # Check if we've been redirected to search page
+                if await self.check_if_on_search_page():
+                    await self.enter_username()
+                    await self.click_search()
+                    await self.wait_for_dashboard()
+                    await self.click_earn_credits()
+                    continue
                 
                 # Look for buttons with like, follow, or verify text
                 selectors = [
