@@ -77,7 +77,7 @@ class SilentAutoClicker:
 
     async def navigate_to_site(self):
         await self.page.goto('https://greatonlinetools.com/autoliker/', timeout=60000)
-        await self.page.wait_for_load_state('networkidle', timeout=30000)
+        await self.page.wait_for_load_state('load', timeout=90000)
 
     async def scroll_to_find_element(self, selector, max_scrolls=20):
         for _ in range(max_scrolls):
