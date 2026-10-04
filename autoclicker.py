@@ -9,6 +9,9 @@ class SilentAutoClicker:
         self.context = None
         self.page = None
         self.running = True
+        self.scroll_position = 0
+        self.button_found_position = None
+        self.no_button_count = 0
 
     async def init(self, headless=False):
         playwright = await async_playwright().start()
@@ -181,9 +184,13 @@ class SilentAutoClicker:
                     await self.click_search()
                     await self.wait_for_dashboard()
                     await self.click_earn_credits()
+                    self.scroll_position = 0
+                    self.button_found_position = None
+                    self.no_button_count = 0
+                    await self.page.evaluate('window.scrollTo(0, 0)')
                     continue
                 
-                # Find and click all matching buttons without scrolling
+                # Look for buttons
                 selectors = [
                     'button:has-text("Like")',
                     'button:has-text("like")',
@@ -198,26 +205,40 @@ class SilentAutoClicker:
                     'a:has-text("Verify")',
                     'a:has-text("verify")',
                     'button:has-text("verify to")',
-                    'button:has-text("Verify to")',
-                    '*:has-text("Like")',
-                    '*:has-text("like")',
-                    '*:has-text("Follow")',
-                    '*:has-text("follow")',
-                    '*:has-text("Verify")',
-                    '*:has-text("verify")'
+                    'button:has-text("Verify to")'
                 ]
                 
+                clicked = False
                 for selector in selectors:
                     try:
-                        elements = self.page.locator(selector)
-                        count = await elements.count()
-                        for i in range(count):
-                            try:
-                                await elements.nth(i).click(timeout=10)
-                            except:
-                                pass
+                        element = self.page.locator(selector).first
+                        if await element.is_visible(timeout=10):
+                            await element.click(timeout=10)
+                            clicked = True
+                            # Lock position when button found
+                            self.button_found_position = self.scroll_position
+                            self.no_button_count = 0
+                            break
                     except:
                         continue
+                
+                if clicked:
+                    # Button found, stay at this position
+                    pass
+                elif self.button_found_position is not None:
+                    # Button was found before but not now, stay at that position
+                    self.no_button_count += 1
+                    if self.no_button_count > 50:
+                        # No button for 50 iterations, reset and search again
+                        self.button_found_position = None
+                        self.no_button_count = 0
+                else:
+                    # No button found yet, scroll down
+                    await self.page.evaluate('window.scrollBy(0, 200)')
+                    self.scroll_position += 200
+                    if self.scroll_position > 10000:
+                        self.scroll_position = 0
+                        await self.page.evaluate('window.scrollTo(0, 0)')
                 
             except Exception:
                 pass
