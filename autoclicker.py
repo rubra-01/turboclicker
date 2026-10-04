@@ -258,3 +258,32 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+async def main():
+    # 1. Instantiate the clicker engine
+    clicker = SilentAutoClicker()
+    
+    # 2. Fire up the headless browser window instance
+    await clicker.init(headless=True)
+    
+    # 3. Direct the browser to navigate to your target platform website
+    await clicker.navigate_to_site()
+    
+    # 4. Fill out the target username box field 
+    await clicker.enter_username()
+    
+    # 5. Push the query submission search button
+    await clicker.click_search()
+    
+    # 6. Wait for the browser network stack to load the target profile dashboard
+    await clicker.wait_for_dashboard()
+    
+    # 7. Locate and activate the credit accumulation route
+    await clicker.click_earn_credits()
+    
+    # 8. Engage the infinite automation clicking machine
+    await clicker.auto_click_loop()
+
+if __name__ == "__main__":
+    # Execute the asynchronous orchestration chain
+    asyncio.run(main())
+
