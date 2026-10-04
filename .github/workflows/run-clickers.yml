@@ -1,7 +1,7 @@
-name: Run 100x Automation Engines
+name: Run 65x Automation Engines
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allows you to manually trigger this rollout via the GitHub Web UI
 
 jobs:
   parallel-runner:
@@ -31,14 +31,18 @@ jobs:
 
       - name: Execute 65 Clicker Instances Simultaneously
         run: |
-          echo "🚀 Unleashing 65 instances completely at once..."
+          echo "🚀 Unleashing 65 instances smoothly into the background..."
           
           for i in {1..65}
           do
-            # Spawns all 65 immediately into the background without waiting
+            echo "▶️ Launching parallel background process $i of 65..."
             python autoclicker.py &
+            
+            # Short 0.5s pause prevents a total CPU spike while launching 65 browser windows
+            sleep 0.5
           done
           
-          echo "⏳ All 65 background engines launched. Holding main pipeline live..."
+          echo "⏳ All 65 background engines initialized. Holding main pipeline live..."
+          # Keeps the main workflow engine alive until all background processes finish
           wait
-          echo "🎉 Complete!"
+          echo "🎉 All jobs completed successfully!"
